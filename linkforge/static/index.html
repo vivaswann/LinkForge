@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101321">
+  <meta name="description" content="Create short links and track clicks with LinkForge.">
+  <title>LinkForge — Short links, clear insights</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="LinkForge home">
+        <span class="brand-mark" aria-hidden="true">↗</span>
+        <span>link<span class="brand-light">forge</span></span>
+      </a>
+      <span class="local-pill"><span class="status-dot"></span> LOCAL WORKSPACE</span>
+    </header>
+
+    <main>
+      <section class="hero">
+        <p class="eyebrow">YOUR LINKS, UNDER CONTROL</p>
+        <h1>Short links.<br><span>Clear insights.</span></h1>
+        <p class="hero-copy">Turn long URLs into links that are easy to share. Keep an eye on every click from one tidy dashboard.</p>
+      </section>
+
+      <section class="create-card" aria-labelledby="create-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">CREATE A LINK</p>
+            <h2 id="create-heading">Make it shorter.</h2>
+          </div>
+          <span class="step-number">01 / NEW LINK</span>
+        </div>
+        <form id="create-form">
+          <label for="url-input">Destination URL</label>
+          <div class="url-field">
+            <span class="field-icon" aria-hidden="true">↗</span>
+            <input id="url-input" name="url" type="url" placeholder="https://example.com/a/really/long/link" maxlength="2048" required>
+          </div>
+          <div class="alias-row">
+            <div class="alias-input-wrap">
+              <label for="alias-input">Custom alias <span class="optional">OPTIONAL</span></label>
+              <div class="alias-field">
+                <span id="origin-prefix">localhost:8000/</span>
+                <input id="alias-input" name="custom_alias" type="text" placeholder="my-link" minlength="3" maxlength="32" pattern="[A-Za-z0-9_-]{3,32}" autocomplete="off">
+              </div>
+              <p class="field-hint">3–32 letters, numbers, hyphens or underscores.</p>
+            </div>
+            <button class="primary-button" type="submit"><span>Forge link</span><span aria-hidden="true">↗</span></button>
+          </div>
+          <p id="form-message" class="form-message" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="stats-grid" aria-label="Link statistics">
+        <article class="stat-card">
+          <p class="stat-label">TOTAL LINKS</p>
+          <div class="stat-bottom"><span id="total-links" class="stat-value">—</span><span class="stat-icon">↗</span></div>
+        </article>
+        <article class="stat-card">
+          <p class="stat-label">TOTAL CLICKS</p>
+          <div class="stat-bottom"><span id="total-clicks" class="stat-value">—</span><span class="stat-icon">◎</span></div>
+        </article>
+        <article class="stat-card">
+          <p class="stat-label">WORKSPACE</p>
+          <div class="stat-bottom"><span class="stat-value stat-online">Active</span><span class="status-dot"></span></div>
+        </article>
+      </section>
+
+      <section class="links-section" aria-labelledby="links-heading">
+        <div class="links-heading-row">
+          <div>
+            <p class="eyebrow">YOUR COLLECTION</p>
+            <h2 id="links-heading">Recent links <span id="link-count" class="count-badge">0</span></h2>
+          </div>
+          <button id="refresh-button" class="ghost-button" type="button"><span aria-hidden="true">↻</span> Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>SHORT LINK</th><th>DESTINATION</th><th>CLICKS</th><th>CREATED</th><th><span class="sr-only">Actions</span></th></tr></thead>
+            <tbody id="links-body"></tbody>
+          </table>
+          <div id="empty-state" class="empty-state">
+            <span class="empty-icon">↗</span>
+            <h3>Your first link starts here.</h3>
+            <p>Create a short link above. It will show up here with click counts.</p>
+          </div>
+        </div>
+        <p id="load-message" class="load-message" role="status"></p>
+      </section>
+    </main>
+
+    <footer><span class="footer-brand">LINKFORGE / 001</span><span>Small links. Useful signals.</span><span>Built to learn by building.</span></footer>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
