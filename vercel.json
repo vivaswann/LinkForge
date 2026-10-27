@@ -3,16 +3,41 @@
   "builds": [
     {
       "src": "app.py",
-      "use": "@vercel/python",
-      "config": {
-        "includeFiles": ["static/**"]
-      }
+      "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/static/(.*)",
       "dest": "/static/$1"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "app.py"
+    },
+    {
+      "src": "/health",
+      "dest": "app.py"
+    },
+    {
+      "src": "/docs",
+      "dest": "app.py"
+    },
+    {
+      "src": "/openapi.json",
+      "dest": "app.py"
+    },
+    {
+      "src": "/analytics/(.*)",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/([a-zA-Z0-9_-]{3,32})",
+      "dest": "app.py"
+    },
+    {
+      "src": "/",
+      "dest": "/index.html"
     },
     {
       "src": "/(.*)",

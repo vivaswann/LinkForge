@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0d14">
+  <meta name="description" content="LinkForge — Modern developer-grade link management, click analytics, and custom QR codes.">
+  <title>LinkForge — Developer Link Management & Analytics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Navigation Bar -->
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="/" aria-label="LinkForge home">
+          <span class="brand-mark" aria-hidden="true">↗</span>
+          <span class="brand-text">link<span class="brand-accent">forge</span></span>
+          <span class="version-badge">v2.0</span>
+        </a>
+
+        <div class="topbar-actions">
+          <div id="origin-indicator" class="origin-pill" title="Public domain origin">
+            <span class="status-dot"></span>
+            <span id="origin-prefix">localhost:8000</span>
+          </div>
+          <button id="auth-button" class="icon-button" type="button" aria-label="Admin Security" title="Admin Security Settings" hidden>
+            <span id="auth-icon" aria-hidden="true">🔒</span>
+          </button>
+          <button id="open-create-modal-btn" class="primary-button" type="button">
+            <span class="btn-icon">+</span>
+            <span>Create Link</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Hero / Platform Intro -->
+      <section class="platform-header">
+        <div class="header-content">
+          <p class="section-tag">MANAGEMENT &amp; ANALYTICS</p>
+          <h1>Short links. <span>Total control.</span></h1>
+          <p class="header-subtitle">Create custom links, monitor real click signals, generate branded QR codes, and automate expirations from one unified console.</p>
+        </div>
+      </section>
+
+      <!-- KPI Summary Cards -->
+      <section class="stats-grid" aria-label="Platform Summary Statistics">
+        <article class="stat-card" id="stat-total-links">
+          <div class="stat-header">
+            <span class="stat-label">TOTAL LINKS</span>
+            <span class="stat-icon" aria-hidden="true">↗</span>
+          </div>
+          <div class="stat-value" id="summary-total-links">—</div>
+          <p class="stat-sub">Configured short links</p>
+        </article>
+
+        <article class="stat-card" id="stat-total-clicks">
+          <div class="stat-header">
+            <span class="stat-label">TOTAL CLICKS</span>
+            <span class="stat-icon" aria-hidden="true">◎</span>
+          </div>
+          <div class="stat-value" id="summary-total-clicks">—</div>
+          <p class="stat-sub">Redirect events captured</p>
+        </article>
+
+        <article class="stat-card" id="stat-active-links">
+          <div class="stat-header">
+            <span class="stat-label">ACTIVE LINKS</span>
+            <span class="stat-icon success" aria-hidden="true">●</span>
+          </div>
+          <div class="stat-value text-success" id="summary-active-links">—</div>
+          <p class="stat-sub">Currently routing traffic</p>
+        </article>
+
+        <article class="stat-card" id="stat-inactive-links">
+          <div class="stat-header">
+            <span class="stat-label">EXPIRED / PAUSED</span>
+            <span class="stat-icon warning" aria-hidden="true">⦸</span>
+          </div>
+          <div class="stat-value text-muted" id="summary-inactive-links">—</div>
+          <p class="stat-sub">Non-routing links</p>
+        </article>
+      </section>
+
+      <!-- Links Management Section -->
+      <section class="links-section" aria-labelledby="section-title">
+        <div class="section-toolbar">
+          <div class="toolbar-left">
+            <h2 id="section-title">Links <span id="filtered-badge" class="count-badge">0</span></h2>
+          </div>
+
+          <div class="toolbar-controls">
+            <!-- Search Input -->
+            <div class="search-input-wrap">
+              <span class="search-icon" aria-hidden="true">🔍</span>
+              <input id="search-input" type="search" placeholder="Search by title, slug, URL, campaign..." autocomplete="off">
+              <button id="search-clear-btn" class="clear-search-btn" type="button" aria-label="Clear search" hidden>&times;</button>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="select-wrap">
+              <label for="filter-status" class="sr-only">Filter by status</label>
+              <select id="filter-status">
+                <option value="all">All statuses</option>
+                <option value="active">Active only</option>
+                <option value="expired">Expired only</option>
+                <option value="disabled">Paused only</option>
+              </select>
+            </div>
+
+            <!-- Campaign Filter -->
+            <div class="select-wrap">
+              <label for="filter-campaign" class="sr-only">Filter by campaign</label>
+              <select id="filter-campaign">
+                <option value="all">All campaigns</option>
+              </select>
+            </div>
+
+            <!-- Sort By -->
+            <div class="select-wrap">
+              <label for="sort-by" class="sr-only">Sort by</label>
+              <select id="sort-by">
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="clicks_desc">Most clicks</option>
+                <option value="clicks_asc">Least clicks</option>
+                <option value="title">Title (A–Z)</option>
+              </select>
+            </div>
+
+            <button id="refresh-button" class="ghost-button" type="button" title="Reload links">
+              <span aria-hidden="true">↻</span>
+              <span class="btn-text">Refresh</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Links Table View -->
+        <div class="table-container">
+          <table id="links-table">
+            <thead>
+              <tr>
+                <th scope="col">TITLE &amp; DESTINATION</th>
+                <th scope="col">SHORT LINK</th>
+                <th scope="col">STATUS</th>
+                <th scope="col">CLICKS</th>
+                <th scope="col">SCHEDULE</th>
+                <th scope="col" class="text-right">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody id="links-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+
+          <!-- Empty State (No Links) -->
+          <div id="empty-state" class="empty-state" hidden>
+            <div class="empty-icon-wrap" aria-hidden="true">↗</div>
+            <h3 id="empty-title">No links created yet</h3>
+            <p id="empty-desc">Create your first short link to start measuring traffic and generating QR codes.</p>
+            <button id="empty-create-btn" class="primary-button" type="button">Create your first link</button>
+          </div>
+
+          <!-- Empty State (Filter No Match) -->
+          <div id="filter-empty-state" class="empty-state" hidden>
+            <div class="empty-icon-wrap" aria-hidden="true">🔍</div>
+            <h3>No matching links</h3>
+            <p>We couldn't find any links matching your search or filter criteria.</p>
+            <button id="reset-filters-btn" class="ghost-button" type="button">Reset filters</button>
+          </div>
+        </div>
+
+        <p id="load-error-message" class="error-banner" role="alert" hidden></p>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="footer-inner">
+        <span class="footer-tag">LINKFORGE / 002</span>
+        <span class="footer-note">Real-time click signals &bull; IP &amp; Device analytics &bull; SQLite Persistence</span>
+        <span class="footer-status"><span class="status-dot"></span> System operational</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Create Link Modal -->
+  <div id="create-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="create-modal-title" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <span class="modal-eyebrow">NEW SHORT LINK</span>
+          <h2 id="create-modal-title">Forge a link</h2>
+        </div>
+        <button class="modal-close-btn" type="button" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="create-form" class="modal-form">
+        <div class="form-group">
+          <label for="create-url">Destination URL <span class="required">*</span></label>
+          <div class="input-with-icon">
+            <span class="input-icon" aria-hidden="true">🔗</span>
+            <input id="create-url" name="url" type="url" placeholder="https://example.com/products/new-launch" required maxlength="2048" autocomplete="off">
+          </div>
+          <p class="field-hint">Must begin with http:// or https://.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="create-alias">Custom short slug <span class="optional">OPTIONAL</span></label>
+          <div class="slug-input-wrap">
+            <span id="create-origin-slug-prefix" class="slug-prefix">localhost:8000/</span>
+            <input id="create-alias" name="custom_alias" type="text" placeholder="new-launch" minlength="3" maxlength="32" pattern="[A-Za-z0-9_-]{3,32}" autocomplete="off">
+          </div>
+          <p class="field-hint">Leave blank to generate an unpredictable 6-character code. 3–32 letters, numbers, hyphens or underscores.</p>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="create-title">Link title <span class="optional">OPTIONAL</span></label>
+            <input id="create-title" name="title" type="text" placeholder="e.g. Q4 Launch Page" maxlength="128" autocomplete="off">
+          </div>
+
+          <div class="form-group flex-1">
+            <label for="create-campaign">Campaign tag <span class="optional">OPTIONAL</span></label>
+            <input id="create-campaign" name="campaign" type="text" placeholder="e.g. newsletter, twitter" maxlength="64" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="create-expires">Expiration date &amp; time <span class="optional">OPTIONAL</span></label>
+          <input id="create-expires" name="expires_at" type="datetime-local">
+          <p class="field-hint">After this date, the link will no longer redirect visitors and will show a clean expired page.</p>
+        </div>
+
+        <div id="create-error-message" class="form-error-banner" role="alert" hidden></div>
+
+        <div class="modal-actions">
+          <button type="button" class="ghost-button modal-cancel-btn">Cancel</button>
+          <button type="submit" class="primary-button" id="create-submit-btn">
+            <span>Forge Link</span>
+            <span aria-hidden="true">&rarr;</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Link Modal -->
+  <div id="edit-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <span class="modal-eyebrow">UPDATE SETTINGS</span>
+          <h2 id="edit-modal-title">Edit link <code id="edit-slug-display">/slug</code></h2>
+        </div>
+        <button class="modal-close-btn" type="button" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="edit-form" class="modal-form">
+        <input type="hidden" id="edit-code-hidden">
+
+        <div class="form-group">
+          <label for="edit-url">Destination URL <span class="required">*</span></label>
+          <div class="input-with-icon">
+            <span class="input-icon" aria-hidden="true">🔗</span>
+            <input id="edit-url" name="url" type="url" required maxlength="2048" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="edit-title">Link title <span class="optional">OPTIONAL</span></label>
+            <input id="edit-title" name="title" type="text" maxlength="128" autocomplete="off">
+          </div>
+
+          <div class="form-group flex-1">
+            <label for="edit-campaign">Campaign tag <span class="optional">OPTIONAL</span></label>
+            <input id="edit-campaign" name="campaign" type="text" maxlength="64" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="label-with-action">
+            <label for="edit-expires">Expiration date &amp; time <span class="optional">OPTIONAL</span></label>
+            <button id="clear-edit-expires-btn" type="button" class="text-link-button">Clear expiration</button>
+          </div>
+          <input id="edit-expires" name="expires_at" type="datetime-local">
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input id="edit-is-active" name="is_active" type="checkbox">
+            <span>Link active &amp; routing traffic</span>
+          </label>
+          <p class="field-hint">Uncheck to disable routing without deleting the link or click records.</p>
+        </div>
+
+        <div id="edit-error-message" class="form-error-banner" role="alert" hidden></div>
+
+        <div class="modal-actions">
+          <button type="button" class="ghost-button modal-cancel-btn">Cancel</button>
+          <button type="submit" class="primary-button" id="edit-submit-btn">
+            <span>Save Changes</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- QR Code Modal -->
+  <div id="qr-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="qr-modal-title" hidden>
+    <div class="modal-card modal-card-sm text-center">
+      <div class="modal-header">
+        <div>
+          <span class="modal-eyebrow">QR CODE GENERATION</span>
+          <h2 id="qr-modal-title">Scan Short Link</h2>
+        </div>
+        <button class="modal-close-btn" type="button" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="qr-preview-container">
+        <div class="qr-frame">
+          <img id="qr-img" src="" alt="LinkForge QR code" width="220" height="220">
+        </div>
+        <p class="qr-target-text"><code id="qr-short-url">https://example.com/code</code></p>
+        <p class="field-hint">This QR code directly encodes the short link above.</p>
+      </div>
+
+      <div class="modal-actions qr-actions">
+        <button id="qr-copy-btn" class="ghost-button" type="button">Copy Link</button>
+        <a id="qr-download-link" class="primary-button" href="#" download>Download PNG</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analytics Slide-over / Modal -->
+  <div id="analytics-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="analytics-modal-title" hidden>
+    <div class="modal-card modal-card-lg">
+      <div class="modal-header">
+        <div>
+          <span class="modal-eyebrow">CLICK ANALYTICS</span>
+          <h2 id="analytics-modal-title">Analytics for <code id="analytics-slug-display">/slug</code></h2>
+        </div>
+        <button class="modal-close-btn" type="button" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="analytics-content" id="analytics-body">
+        <!-- Analytics Header Meta -->
+        <div class="analytics-meta-banner">
+          <div class="meta-item">
+            <span class="meta-label">DESTINATION</span>
+            <a id="analytics-destination-link" class="meta-value external-link" href="#" target="_blank" rel="noopener noreferrer">https://example.com</a>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">STATUS</span>
+            <span id="analytics-status-badge" class="badge">Active</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">CREATED</span>
+            <span id="analytics-created-date" class="meta-value">—</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">EXPIRES</span>
+            <span id="analytics-expires-date" class="meta-value">Never</span>
+          </div>
+        </div>
+
+        <!-- KPI Row -->
+        <div class="analytics-kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-label">TOTAL CLICKS</span>
+            <span class="kpi-value" id="analytics-total-clicks">0</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">TOP REFERRER</span>
+            <span class="kpi-value-sm" id="analytics-top-referrer">—</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">TOP DEVICE</span>
+            <span class="kpi-value-sm" id="analytics-top-device">—</span>
+          </div>
+        </div>
+
+        <!-- Clicks Over Time Chart -->
+        <div class="analytics-section">
+          <div class="section-subheading">
+            <h3>Clicks Over Time</h3>
+            <span class="subtext">Daily redirect volume</span>
+          </div>
+          <div class="chart-wrapper" id="clicks-chart-container">
+            <svg id="clicks-chart-svg" viewBox="0 0 600 180" preserveAspectRatio="none" aria-label="Clicks over time chart"></svg>
+            <div id="chart-empty-state" class="chart-empty" hidden>
+              <span>No click events recorded for this link yet.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grid: Referrers & Devices Breakdown -->
+        <div class="analytics-two-col">
+          <!-- Referrers Breakdown -->
+          <div class="breakdown-card">
+            <h3>Referrer Sources</h3>
+            <div id="referrers-list" class="breakdown-list">
+              <!-- Rendered items -->
+            </div>
+          </div>
+
+          <!-- Device Categories Breakdown -->
+          <div class="breakdown-card">
+            <h3>Device Categories</h3>
+            <div id="devices-list" class="breakdown-list">
+              <!-- Rendered items -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity Table -->
+        <div class="analytics-section">
+          <div class="section-subheading">
+            <h3>Recent Clicks Log</h3>
+            <span class="subtext">Real-time visitor access log with device &amp; IP details</span>
+          </div>
+          <div class="recent-table-wrap">
+            <table class="recent-table">
+              <thead>
+                <tr>
+                  <th>TIMESTAMP (UTC)</th>
+                  <th>IP ADDRESS</th>
+                  <th>DEVICE &amp; OS</th>
+                  <th>REFERRER</th>
+                </tr>
+              </thead>
+              <tbody id="recent-clicks-tbody">
+                <!-- Rendered rows -->
+              </tbody>
+            </table>
+            <div id="recent-clicks-empty" class="table-empty-sub" hidden>
+              No clicks recorded yet.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title" hidden>
+    <div class="modal-card modal-card-sm">
+      <div class="modal-header">
+        <div>
+          <span class="modal-eyebrow text-danger">CONFIRM DELETION</span>
+          <h2 id="delete-modal-title">Delete short link?</h2>
+        </div>
+        <button class="modal-close-btn" type="button" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="modal-body-copy">
+        <p>Are you sure you want to delete <code id="delete-slug-display">/slug</code>? This will permanently remove the short link and all its historical click analytics from SQLite.</p>
+        <p class="text-danger-sub">This action cannot be undone.</p>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="ghost-button modal-cancel-btn">Cancel</button>
+        <button type="button" class="danger-button" id="confirm-delete-btn">Delete Permanently</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Auth Modal -->
+  <div id="auth-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title" hidden>
+    <div class="modal-card modal-card-sm">
+      <div class="modal-header">
+        <div>
+          <span class="modal-eyebrow">AUTHENTICATION</span>
+          <h2 id="auth-modal-title">Admin Access</h2>
+        </div>
+        <button class="modal-close-btn" type="button" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="auth-form" class="modal-form">
+        <p class="modal-hint">Enter your <code>LINKFORGE_ADMIN_KEY</code> to manage links and configuration.</p>
+        <div class="form-group">
+          <label for="admin-key-input">Admin Key</label>
+          <input id="admin-key-input" type="password" required placeholder="Enter key..." autocomplete="current-password">
+        </div>
+        <div id="auth-error-msg" class="form-error-banner" role="alert" hidden></div>
+        <div class="modal-actions">
+          <button type="button" class="ghost-button modal-cancel-btn">Cancel</button>
+          <button type="submit" class="primary-button">Authenticate</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
