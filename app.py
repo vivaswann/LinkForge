@@ -209,8 +209,21 @@ def require_admin(request: Request) -> None:
 
 # --- Core UI Routes ---
 
+def get_static_file(filename: str) -> Path:
+    direct = STATIC_DIR / filename
+    if direct.exists():
+        return direct
+    alt = BASE_DIR / "public" / "static" / filename
+    if alt.exists():
+        return alt
+    alt_root = BASE_DIR / "public" / filename
+    if alt_root.exists():
+        return alt_root
+    return direct
+
+
 def render_index_html() -> Response:
-    index_path = STATIC_DIR / "index.html"
+    index_path = get_static_file("index.html")
     if index_path.exists():
         return HTMLResponse(content=index_path.read_text(encoding="utf-8"))
     return FileResponse(index_path)
@@ -221,6 +234,22 @@ def render_index_html() -> Response:
 @app.get("/api/index", include_in_schema=False)
 def home() -> Response:
     return render_index_html()
+
+
+@app.get("/static/styles.css", include_in_schema=False)
+def static_styles_css() -> Response:
+    css_path = get_static_file("styles.css")
+    if css_path.exists():
+        return Response(content=css_path.read_text(encoding="utf-8"), media_type="text/css")
+    return FileResponse(css_path, media_type="text/css")
+
+
+@app.get("/static/app.js", include_in_schema=False)
+def static_app_js() -> Response:
+    js_path = get_static_file("app.js")
+    if js_path.exists():
+        return Response(content=js_path.read_text(encoding="utf-8"), media_type="application/javascript")
+    return FileResponse(js_path, media_type="application/javascript")
 
 
 @app.get("/analytics/{code}", include_in_schema=False)
