@@ -136,6 +136,32 @@ def public_base_url(request: Request) -> str:
     return str(request.base_url).rstrip("/")
 
 
+def get_client_ip(request: Request) -> str:
+    """Extract client public IP address, handling proxy headers (Vercel, Render, Cloudflare)."""
+    # 1. Cloudflare
+    cf_ip = request.headers.get("cf-connecting-ip")
+    if cf_ip and cf_ip.strip():
+        return cf_ip.strip()
+
+    # 2. Vercel, Render, Nginx
+    real_ip = request.headers.get("x-real-ip")
+    if real_ip and real_ip.strip():
+        return real_ip.strip()
+
+    # 3. Standard reverse proxy list
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded and forwarded.strip():
+        client_ip = forwarded.split(",")[0].strip()
+        if client_ip:
+            return client_ip
+
+    # 4. Direct client connection host
+    if request.client and request.client.host:
+        return request.client.host
+
+    return "127.0.0.1"
+
+
 def link_to_dict(row: sqlite3.Row, request: Request) -> dict:
     return link_row_to_dict(row, public_base_url(request))
 
@@ -518,12 +544,20 @@ def redirect_short_link(code: str, request: Request) -> Response:
             status_code=410,
         )
 
-    # 4. Valid and active link -> record privacy-conscious click event and redirect
+    # 4. Valid and active link -> record click event with IP and device name
     ua = request.headers.get("user-agent")
-    device = analytics.detect_device(ua)
+    device_cat = analytics.detect_device(ua)
+    device_name = analytics.detect_device_name(ua)
     ref = analytics.clean_referrer(request.headers.get("referer"))
+    ip = get_client_ip(request)
 
-    record_click_event(row["id"], referrer=ref, device_category=device)
+    record_click_event(
+        row["id"],
+        referrer=ref,
+        device_category=device_cat,
+        device_name=device_name,
+        ip_address=ip,
+    )
     target_url = row["original_url"]
 
     return RedirectResponse(url=target_url, status_code=302)

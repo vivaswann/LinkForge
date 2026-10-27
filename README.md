@@ -1,12 +1,12 @@
 # LinkForge
 
-A modern, full-featured link management and analytics platform built with FastAPI, SQLite, and vanilla HTML/CSS/JavaScript. Create short links, choose custom aliases, track privacy-friendly click analytics, generate branded QR codes, set link expiration, and organize links by campaign from a polished dark-graphite dashboard.
+A modern, full-featured link management and analytics platform built with FastAPI, SQLite, and vanilla HTML/CSS/JavaScript. Create short links, choose custom aliases, track real-time click analytics with visitor IP addresses and detailed device names, generate branded QR codes, set link expiration, and organize links by campaign from a polished dark-graphite dashboard.
 
 ## Features
 
 - **Advanced Link Creation**: Custom slugs, automatic unpredictable slug generation, optional link titles, campaign tags, and scheduled expiration dates.
 - **Link Management Dashboard**: Dark graphite design with restrained violet accents. Search by title, slug, or destination, filter by status (active, expired, paused) and campaign, and sort by date or clicks.
-- **Privacy-Conscious Click Analytics**: Tracks total clicks, clicks over time (interactive SVG timeline), referrer domain breakdown, and device categories (Desktop, Mobile, Tablet, Bot) without recording raw IP addresses.
+- **Real-Time Click Signals & Analytics**: Tracks total clicks, clicks over time (interactive SVG timeline), referrer domain breakdown, visitor IP addresses, and detailed device/OS detection (e.g. iPhone, Windows, Mac, Android).
 - **QR Code Generation**: Generate, preview, and download high-resolution PNG QR codes directly encoding the public short URL.
 - **Link Expiration & Status Handling**: Server-side expiration checks with clean expired-link and disabled-link status pages. Expired links never redirect.
 - **Safe SQLite Persistence & Migration**: Fully backward-compatible schema migrations. Preserves existing link configurations and database history.
@@ -94,7 +94,7 @@ The test suite covers:
 - Deleting links and cascading removal of analytics
 - Server-side expiration handling (status 410 with expired landing page)
 - Disabled link handling (status 403 with paused landing page)
-- Privacy-conscious analytics recording (device category and referrer domain without IP storage)
+- Click analytics recording with visitor IP address, device name, and referrer domain
 - QR code generation and PNG attachment downloads
 - Backward-compatible database schema migrations from legacy tables
 - Admin authentication enforcement when `LINKFORGE_ADMIN_KEY` is configured

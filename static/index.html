@@ -184,7 +184,7 @@
     <footer class="app-footer">
       <div class="footer-inner">
         <span class="footer-tag">LINKFORGE / 002</span>
-        <span class="footer-note">Privacy-conscious click signals &bull; SQLite Persistence &bull; Python FastAPI</span>
+        <span class="footer-note">Real-time click signals &bull; IP &amp; Device analytics &bull; SQLite Persistence</span>
         <span class="footer-status"><span class="status-dot"></span> System operational</span>
       </div>
     </footer>
@@ -424,15 +424,16 @@
         <div class="analytics-section">
           <div class="section-subheading">
             <h3>Recent Clicks Log</h3>
-            <span class="subtext">Privacy-conscious audit log (no IP stored)</span>
+            <span class="subtext">Real-time visitor access log with device &amp; IP details</span>
           </div>
           <div class="recent-table-wrap">
             <table class="recent-table">
               <thead>
                 <tr>
                   <th>TIMESTAMP (UTC)</th>
+                  <th>IP ADDRESS</th>
+                  <th>DEVICE &amp; OS</th>
                   <th>REFERRER</th>
-                  <th>DEVICE CATEGORY</th>
                 </tr>
               </thead>
               <tbody id="recent-clicks-tbody">

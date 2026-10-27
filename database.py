@@ -110,12 +110,22 @@ def init_db(db_path: Path | None = None) -> None:
                 clicked_at TEXT NOT NULL,
                 referrer TEXT NOT NULL DEFAULT 'Direct / None',
                 device_category TEXT NOT NULL DEFAULT 'Desktop',
+                device_name TEXT NOT NULL DEFAULT 'Unknown Device',
+                ip_address TEXT NOT NULL DEFAULT '127.0.0.1',
                 FOREIGN KEY (link_id) REFERENCES links(id) ON DELETE CASCADE
             )
             """
         )
         connection.execute("CREATE INDEX IF NOT EXISTS idx_clicks_link_id ON clicks(link_id)")
         connection.execute("CREATE INDEX IF NOT EXISTS idx_clicks_clicked_at ON clicks(clicked_at)")
+
+        # Migration: ensure ip_address and device_name exist on clicks table
+        clicks_columns_info = connection.execute("PRAGMA table_info(clicks)").fetchall()
+        existing_clicks_columns = {col["name"] for col in clicks_columns_info}
+        if "ip_address" not in existing_clicks_columns:
+            connection.execute("ALTER TABLE clicks ADD COLUMN ip_address TEXT NOT NULL DEFAULT '127.0.0.1'")
+        if "device_name" not in existing_clicks_columns:
+            connection.execute("ALTER TABLE clicks ADD COLUMN device_name TEXT NOT NULL DEFAULT 'Unknown Device'")
 
 
 def link_row_to_dict(row: sqlite3.Row, base_url: str) -> dict:
@@ -240,14 +250,19 @@ def record_click_event(
     link_id: int,
     referrer: str,
     device_category: str,
+    device_name: str = "Unknown Device",
+    ip_address: str = "127.0.0.1",
     db_path: Path | None = None,
 ) -> None:
     """Record a click event in the clicks table and increment the link clicks count."""
     now = utc_now()
     with database(db_path) as conn:
         conn.execute(
-            "INSERT INTO clicks (link_id, clicked_at, referrer, device_category) VALUES (?, ?, ?, ?)",
-            (link_id, now, referrer, device_category),
+            """
+            INSERT INTO clicks (link_id, clicked_at, referrer, device_category, device_name, ip_address)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (link_id, now, referrer, device_category, device_name, ip_address),
         )
         conn.execute("UPDATE links SET clicks = clicks + 1 WHERE id = ?", (link_id,))
 
@@ -290,13 +305,13 @@ def get_link_analytics(link_id: int, db_path: Path | None = None) -> dict:
             pct = round((row["count"] / total_clicks * 100), 1) if total_clicks > 0 else 0.0
             referrers.append({"referrer": row["referrer"], "count": row["count"], "percentage": pct})
 
-        # Device breakdown
+        # Device breakdown (grouped by detailed device name)
         device_rows = conn.execute(
             """
-            SELECT device_category, COUNT(*) AS count
+            SELECT COALESCE(device_name, device_category) AS dev_label, COUNT(*) AS count
             FROM clicks
             WHERE link_id = ?
-            GROUP BY device_category
+            GROUP BY dev_label
             ORDER BY count DESC
             """,
             (link_id,),
@@ -304,12 +319,14 @@ def get_link_analytics(link_id: int, db_path: Path | None = None) -> dict:
         devices = []
         for row in device_rows:
             pct = round((row["count"] / total_clicks * 100), 1) if total_clicks > 0 else 0.0
-            devices.append({"device": row["device_category"], "count": row["count"], "percentage": pct})
+            devices.append({"device": row["dev_label"], "count": row["count"], "percentage": pct})
 
-        # Recent 25 click events
+        # Recent 25 click events with IP and device name
         recent_rows = conn.execute(
             """
-            SELECT clicked_at, referrer, device_category
+            SELECT clicked_at, referrer, device_category,
+                   COALESCE(device_name, device_category) AS device_name,
+                   COALESCE(ip_address, '127.0.0.1') AS ip_address
             FROM clicks
             WHERE link_id = ?
             ORDER BY id DESC
@@ -322,6 +339,8 @@ def get_link_analytics(link_id: int, db_path: Path | None = None) -> dict:
                 "clicked_at": row["clicked_at"],
                 "referrer": row["referrer"],
                 "device": row["device_category"],
+                "device_name": row["device_name"],
+                "ip_address": row["ip_address"],
             }
             for row in recent_rows
         ]

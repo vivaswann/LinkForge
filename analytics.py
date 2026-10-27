@@ -19,7 +19,6 @@ def detect_device(user_agent: str | None) -> str:
     """Classify the user agent into a coarse device category.
     
     Returns one of: 'Desktop', 'Mobile', 'Tablet', 'Bot / Crawler', or 'Unknown'.
-    Does not fingerprint visitors or track identity.
     """
     if not user_agent or not user_agent.strip():
         return "Unknown"
@@ -37,6 +36,80 @@ def detect_device(user_agent: str | None) -> str:
         return "Mobile"
 
     return "Desktop"
+
+
+def detect_device_name(user_agent: str | None) -> str:
+    """Extract a human-friendly device, OS, and browser name from the User-Agent header.
+    
+    Examples:
+    - 'iPhone (Safari)'
+    - 'Windows 10/11 (Chrome)'
+    - 'Mac (Safari)'
+    - 'Android Phone (Chrome)'
+    - 'Linux (Firefox)'
+    - 'iPad (Safari)'
+    - 'Googlebot'
+    """
+    if not user_agent or not user_agent.strip():
+        return "Unknown Device"
+
+    ua = user_agent.strip()
+    ua_lower = ua.lower()
+
+    # Detect bots
+    if BOT_PATTERNS.search(ua):
+        if "googlebot" in ua_lower:
+            return "Googlebot"
+        if "discordbot" in ua_lower:
+            return "Discordbot"
+        if "twitterbot" in ua_lower or "x.com" in ua_lower:
+            return "Twitterbot"
+        if "slackbot" in ua_lower:
+            return "Slackbot"
+        if "curl" in ua_lower:
+            return "cURL Client"
+        if "python" in ua_lower or "httpx" in ua_lower:
+            return "Python HTTP Client"
+        return "Bot / Crawler"
+
+    # Detect Platform / Operating System
+    platform = "Desktop"
+    if "iphone" in ua_lower:
+        platform = "iPhone"
+    elif "ipad" in ua_lower:
+        platform = "iPad"
+    elif "android" in ua_lower:
+        platform = "Android Tablet" if "tablet" in ua_lower or "mobile" not in ua_lower else "Android Phone"
+    elif "windows" in ua_lower:
+        if "windows nt 10.0" in ua_lower:
+            platform = "Windows 10/11"
+        else:
+            platform = "Windows"
+    elif "macintosh" in ua_lower or "mac os" in ua_lower:
+        platform = "Mac"
+    elif "linux" in ua_lower:
+        platform = "Linux"
+    elif "cros" in ua_lower:
+        platform = "ChromeOS"
+
+    # Detect Browser
+    browser = ""
+    if "edg/" in ua_lower or "edge/" in ua_lower:
+        browser = "Edge"
+    elif "opr/" in ua_lower or "opera" in ua_lower:
+        browser = "Opera"
+    elif "samsungbrowser" in ua_lower:
+        browser = "Samsung Internet"
+    elif "chrome/" in ua_lower:
+        browser = "Chrome"
+    elif "firefox/" in ua_lower:
+        browser = "Firefox"
+    elif "safari/" in ua_lower:
+        browser = "Safari"
+
+    if platform and browser:
+        return f"{platform} ({browser})"
+    return platform or browser or "Unknown Device"
 
 
 def clean_referrer(referrer: str | None) -> str:

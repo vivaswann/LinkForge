@@ -1184,6 +1184,17 @@ tbody tr:last-child td {
   font-size: 11.5px;
 }
 
+.ip-badge {
+  display: inline-block;
+  font: 600 11px var(--mono);
+  color: var(--violet-hover);
+  background: rgba(139, 125, 255, 0.1);
+  border: 1px solid rgba(139, 125, 255, 0.25);
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+}
+
 .table-empty-sub {
   text-align: center;
   padding: 24px;

@@ -837,13 +837,20 @@
       tdTime.textContent = formatDateTime(click.clicked_at);
       tr.append(tdTime);
 
+      const tdIp = document.createElement('td');
+      const ipBadge = document.createElement('code');
+      ipBadge.className = 'ip-badge';
+      ipBadge.textContent = click.ip_address || '127.0.0.1';
+      tdIp.append(ipBadge);
+      tr.append(tdIp);
+
+      const tdDev = document.createElement('td');
+      tdDev.textContent = click.device_name || click.device || 'Desktop';
+      tr.append(tdDev);
+
       const tdRef = document.createElement('td');
       tdRef.textContent = click.referrer || 'Direct / None';
       tr.append(tdRef);
-
-      const tdDev = document.createElement('td');
-      tdDev.textContent = click.device || 'Desktop';
-      tr.append(tdDev);
 
       els.recentClicksTbody.append(tr);
     });

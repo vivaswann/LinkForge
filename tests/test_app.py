@@ -196,7 +196,7 @@ def test_disabled_links_handling():
         assert redirected.headers["location"] == "https://example.com/target"
 
 
-def test_click_analytics_and_privacy():
+def test_click_analytics_and_device_ip_capture():
     with TestClient(app_module.app) as client:
         created = client.post(
             "/api/links",
@@ -204,22 +204,24 @@ def test_click_analytics_and_privacy():
         )
         assert created.status_code == 201
 
-        # Simulate mobile click with Hacker News referrer
+        # Simulate mobile click with Hacker News referrer and forwarded IP
         client.get(
             "/metrics-link",
             headers={
                 "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
                 "Referer": "https://news.ycombinator.com/item?id=9999",
+                "X-Forwarded-For": "198.51.100.42",
             },
             follow_redirects=False,
         )
 
-        # Simulate desktop click with Google referrer
+        # Simulate desktop click with Google referrer and real IP
         client.get(
             "/metrics-link",
             headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                 "Referer": "https://www.google.com/search?q=example",
+                "X-Real-IP": "203.0.113.19",
             },
             follow_redirects=False,
         )
@@ -229,25 +231,32 @@ def test_click_analytics_and_privacy():
         assert len(analytics["clicks_by_date"]) == 1
         assert analytics["clicks_by_date"][0]["count"] == 2
 
-        # Check devices detection
+        # Check devices detection with descriptive names
         device_names = {d["device"] for d in analytics["devices"]}
-        assert "Mobile" in device_names
-        assert "Desktop" in device_names
+        assert any("iPhone" in name for name in device_names)
+        assert any("Windows" in name for name in device_names)
 
         # Check referrers detection
         referrer_names = {r["referrer"] for r in analytics["referrers"]}
         assert "Hacker News" in referrer_names
         assert "Google" in referrer_names
 
-        # Check recent clicks log
-        assert len(analytics["recent_clicks"]) == 2
+        # Check recent clicks log captures IP address and device name
+        recent = analytics["recent_clicks"]
+        assert len(recent) == 2
+        ips = {c["ip_address"] for c in recent}
+        assert "198.51.100.42" in ips
+        assert "203.0.113.19" in ips
+        for click in recent:
+            assert "device_name" in click
+            assert click["device_name"] != ""
 
-        # Privacy check: Verify no raw IP address is stored in the clicks table
+        # Database verification: columns exist in clicks table
         with app_module.database() as conn:
             cursor = conn.execute("PRAGMA table_info(clicks)")
             columns = [row["name"] for row in cursor.fetchall()]
-            assert "ip" not in columns
-            assert "ip_address" not in columns
+            assert "ip_address" in columns
+            assert "device_name" in columns
 
 
 def test_qr_code_generation():
