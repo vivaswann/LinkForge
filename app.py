@@ -60,6 +60,28 @@ app = FastAPI(
     description="A modern, full-featured link management and analytics platform.",
     lifespan=lifespan,
 )
+
+
+@app.middleware("http")
+async def vercel_path_rewrite_middleware(request: Request, call_next):
+    """Normalize Vercel serverless request path if routed through api/index.py."""
+    path = request.scope.get("path", "")
+    if path in {"/api/index.py", "/api/index", "/api/index/"}:
+        forwarded = (
+            request.headers.get("x-forwarded-uri")
+            or request.headers.get("x-matched-path")
+            or request.headers.get("x-real-path")
+        )
+        if forwarded:
+            clean_path = urlsplit(forwarded).path
+            if clean_path and clean_path not in {"/api/index.py", "/api/index", "/api/index/"}:
+                request.scope["path"] = clean_path
+        else:
+            request.scope["path"] = "/"
+
+    return await call_next(request)
+
+
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
@@ -161,14 +183,23 @@ def require_admin(request: Request) -> None:
 
 # --- Core UI Routes ---
 
+def render_index_html() -> Response:
+    index_path = STATIC_DIR / "index.html"
+    if index_path.exists():
+        return HTMLResponse(content=index_path.read_text(encoding="utf-8"))
+    return FileResponse(index_path)
+
+
 @app.get("/", include_in_schema=False)
-def home() -> FileResponse:
-    return FileResponse(STATIC_DIR / "index.html")
+@app.get("/api/index.py", include_in_schema=False)
+@app.get("/api/index", include_in_schema=False)
+def home() -> Response:
+    return render_index_html()
 
 
 @app.get("/analytics/{code}", include_in_schema=False)
-def analytics_page(code: str) -> FileResponse:
-    return FileResponse(STATIC_DIR / "index.html")
+def analytics_page(code: str) -> Response:
+    return render_index_html()
 
 
 @app.get("/health")

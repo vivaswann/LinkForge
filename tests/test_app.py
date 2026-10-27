@@ -379,6 +379,16 @@ def test_vercel_entrypoint_and_routes():
         assert health.status_code == 200
         assert health.json() == {"status": "ok"}
 
+        # Direct access to entrypoint renders dashboard
+        entry_resp = client.get("/api/index.py")
+        assert entry_resp.status_code == 200
+        assert "<!doctype html>" in entry_resp.text.lower()
+
+        # Forwarded URI header normalization
+        fwd_resp = client.get("/api/index.py", headers={"x-forwarded-uri": "/health"})
+        assert fwd_resp.status_code == 200
+        assert fwd_resp.json() == {"status": "ok"}
+
         created = client.post("/api/links", json={"url": "https://example.com/vercel-test"})
         assert created.status_code == 201
         assert created.json()["link"]["url"] == "https://example.com/vercel-test"
