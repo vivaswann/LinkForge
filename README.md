@@ -1,35 +1,34 @@
 # LinkForge
 
-A beginner-friendly URL shortener built with FastAPI, SQLite, and plain HTML/CSS/JavaScript. Create short links, choose custom aliases, count clicks, copy links, and delete links from a dashboard.
+A modern, full-featured link management and analytics platform built with FastAPI, SQLite, and vanilla HTML/CSS/JavaScript. Create short links, choose custom aliases, track privacy-friendly click analytics, generate branded QR codes, set link expiration, and organize links by campaign from a polished dark-graphite dashboard.
 
 ## Features
 
-- Short codes generated with Python's `secrets` module
-- Optional custom aliases (3–32 letters, numbers, hyphens, or underscores)
-- SQLite persistence, so links remain after a server restart
-- HTTP redirects and click counts
-- Dashboard with total links, total clicks, creation dates, and link management
-- URL and alias validation
-- Local-first setup; no external database account required
+- **Advanced Link Creation**: Custom slugs, automatic unpredictable slug generation, optional link titles, campaign tags, and scheduled expiration dates.
+- **Link Management Dashboard**: Dark graphite design with restrained violet accents. Search by title, slug, or destination, filter by status (active, expired, paused) and campaign, and sort by date or clicks.
+- **Privacy-Conscious Click Analytics**: Tracks total clicks, clicks over time (interactive SVG timeline), referrer domain breakdown, and device categories (Desktop, Mobile, Tablet, Bot) without recording raw IP addresses.
+- **QR Code Generation**: Generate, preview, and download high-resolution PNG QR codes directly encoding the public short URL.
+- **Link Expiration & Status Handling**: Server-side expiration checks with clean expired-link and disabled-link status pages. Expired links never redirect.
+- **Safe SQLite Persistence & Migration**: Fully backward-compatible schema migrations. Preserves existing link configurations and database history.
+- **Security & Authentication**: Parameterized SQL queries, URL normalization, HTML-escaped outputs, and optional administration protection via `LINKFORGE_ADMIN_KEY`.
 
 ## Requirements
 
 - Python 3.10 or newer
-- Internet connection only if you want the optional Google Fonts used in the UI; the application itself runs locally
+- SQLite 3
 
-## Run locally
+## Run Locally
 
 ### Windows PowerShell
 
 ```powershell
-cd linkforge
 py -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 uvicorn app:app --reload
 ```
 
-If PowerShell blocks activation, use Command Prompt instead:
+If PowerShell blocks execution, activate in Command Prompt:
 
 ```bat
 .venv\Scripts\activate.bat
@@ -40,71 +39,108 @@ Then open <http://127.0.0.1:8000> in your browser.
 ### macOS / Linux
 
 ```bash
-cd linkforge
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 uvicorn app:app --reload
 ```
 
-## Use a clean public domain after deployment
+## Deployment
 
-When you run LinkForge on your own laptop, the address includes the local host and port (for example, `127.0.0.1:8000`). That is only the local development address. To have a shareable URL without that IP and port, deploy LinkForge so it has a public domain, such as `https://your-app.onrender.com`.
+### Deploy to Vercel
+
+LinkForge includes native Vercel Serverless Function support via [`vercel.json`](file:///c:/Users/Official/Desktop/LinkForge/vercel.json) and [`api/index.py`](file:///c:/Users/Official/Desktop/LinkForge/api/index.py):
+
+1. Push this repository to your GitHub account.
+2. Import the project in the [Vercel Dashboard](https://vercel.com/new).
+3. Vercel automatically detects the Python runtime and routes all traffic to the FastAPI application.
+4. (Optional) In your Vercel Project Settings &rarr; **Environment Variables**, add:
+   - `LINKFORGE_BASE_URL`: Your public domain (e.g. `https://links.yourdomain.com` or `https://linkforge.vercel.app`) without a trailing slash.
+   - `LINKFORGE_ADMIN_KEY`: Your secret administration key.
+
+> **Storage Note:** Serverless functions execute in an ephemeral container. On Vercel, the SQLite database is automatically created in `/tmp/linkforge.db`. For persistent long-term storage across serverless cold starts, use a host with persistent disks (such as Render or a VPS) or point `LINKFORGE_DB_PATH` to a mounted network volume.
 
 ### Deploy to Render
 
-1. Push the contents of this folder to a GitHub repository.
-2. In Render, choose **New → Blueprint** and connect that repository. Render will read the included `render.yaml` and create a web service.
-3. Once deployment finishes, open the public `onrender.com` URL. Short links will use that public host instead of `127.0.0.1:8000`.
-4. If the generated links show the wrong scheme or host, add `LINKFORGE_BASE_URL` in the service's environment variables, set to the exact public origin with no trailing slash. For example: `https://your-app.onrender.com`.
+LinkForge includes a ready-to-use [`render.yaml`](file:///c:/Users/Official/Desktop/LinkForge/render.yaml) blueprint:
 
-For local testing, leave `LINKFORGE_BASE_URL` unset.
+1. Push this repository to your GitHub account.
+2. In Render, select **New &rarr; Blueprint** and connect your repository.
+3. Render will automatically build the service from `requirements.txt` and start the server with Uvicorn.
+4. For durable link storage on Render, attach a [Render Persistent Disk](https://render.com/docs/disks).
 
-**Storage note:** Render's default filesystem is ephemeral, and this app stores links in SQLite. On a free Render service, saved links can disappear when the service restarts or spins down. See Render's [persistent disk documentation](https://render.com/docs/disks) before using this as a durable public service; a managed database is the better long-term improvement.
+## Environment Variables
 
-## Try it
+| Variable | Description | Default |
+|---|---|---|
+| `LINKFORGE_BASE_URL` | Public origin domain (e.g. `https://links.example.com`) without a trailing slash. Used for short URLs and QR codes. | Current request origin |
+| `LINKFORGE_ADMIN_KEY` | Optional admin key to protect dashboard write operations (`POST`, `PATCH`, `DELETE`). If unset, access is open. | Unset (open access) |
+| `LINKFORGE_DB_PATH` | Path to the SQLite database file. Automatically defaults to `/tmp/linkforge.db` on Vercel serverless. | `./linkforge.db` |
 
-1. Paste a complete URL such as `https://example.com`.
-2. Optionally enter a custom alias such as `example-home`.
-3. Select **Forge link**.
-4. Open the generated short URL in a new tab. The destination should open and the click count should increase after refreshing the dashboard.
-5. Copy or delete a link from the table.
+## Run Automated Tests
 
-## Run tests
-
-Install development dependencies and run the automated API tests:
+Install development dependencies and run the automated test suite:
 
 ```bash
 python -m pip install -r requirements-dev.txt
 python -m pytest -q
 ```
 
-## API routes
+The test suite covers:
+- Short link creation with random and custom slugs
+- Duplicate alias rejection and reserved slug protection
+- Successful 302 redirects and atomic click counter increments
+- Editing and updating link metadata (title, URL, campaign, expiration)
+- Deleting links and cascading removal of analytics
+- Server-side expiration handling (status 410 with expired landing page)
+- Disabled link handling (status 403 with paused landing page)
+- Privacy-conscious analytics recording (device category and referrer domain without IP storage)
+- QR code generation and PNG attachment downloads
+- Backward-compatible database schema migrations from legacy tables
+- Admin authentication enforcement when `LINKFORGE_ADMIN_KEY` is configured
+- Search, filter, and sorting queries
+- Vercel serverless entrypoint and `/tmp` database path resolution
 
-| Method | Route | Purpose |
+## API Routes
+
+| Method | Route | Description |
 |---|---|---|
-| `GET` | `/health` | Health check |
-| `GET` | `/api/config` | Return the configured public base URL |
-| `GET` | `/api/links` | List links and summary stats |
-| `POST` | `/api/links` | Create a short link |
-| `GET` | `/api/links/{code}` | Get one link |
-| `DELETE` | `/api/links/{code}` | Delete a link |
-| `GET` | `/{code}` | Redirect to the destination and count the click |
-| `GET` | `/docs` | Interactive API documentation |
+| `GET` | `/health` | Health check endpoint |
+| `GET` | `/api/config` | Return configured public base URL |
+| `GET` | `/api/auth/status` | Return authentication status |
+| `POST` | `/api/auth/verify` | Authenticate admin key and set session cookie |
+| `POST` | `/api/auth/logout` | Clear admin session cookie |
+| `GET` | `/api/links` | List links with `search`, `status`, `campaign`, and `sort` query params |
+| `POST` | `/api/links` | Create a new short link |
+| `GET` | `/api/links/{code}` | Get single link details |
+| `PATCH` | `/api/links/{code}` | Update link metadata or expiration |
+| `POST` | `/api/links/{code}/toggle` | Toggle link active/paused status |
+| `DELETE` | `/api/links/{code}` | Delete a link and its analytics |
+| `GET` | `/api/links/{code}/qr` | Generate QR code PNG (`?download=true` for attachment) |
+| `GET` | `/api/links/{code}/analytics` | Get click analytics (timeline, referrers, devices, recent log) |
+| `GET` | `/{code}` | Redirect to destination (302) or render expired/disabled page |
+| `GET` | `/docs` | Interactive Swagger API documentation |
 
-Example create request:
+## Project Structure
 
-```json
-{
-  "url": "https://example.com/some/long/path",
-  "custom_alias": "example-path"
-}
 ```
-
-`custom_alias` can be omitted to generate a random code.
-
-## Notes and next steps
-
-This is a learning project, not a production URL-shortening service. Before public deployment, add rate limiting, abuse/spam controls, safer handling of external destinations, automated tests, and appropriate logging. This version records total clicks only; it does not store visitor IP addresses or fingerprint visitors.
-
-Possible extensions: click history by day, QR-code generation, expiration dates, link search, password-protected destinations, and automated tests.
+LinkForge/
+├── api/
+│   └── index.py           # Vercel serverless function entrypoint
+├── static/
+│   ├── index.html         # Modern dashboard, modals, and analytics view
+│   ├── styles.css         # Dark graphite design system & responsive layout
+│   └── app.js             # Client application logic & dynamic SVG charts
+├── tests/
+│   └── test_app.py        # Automated test suite (16 test cases)
+├── analytics.py           # Privacy-safe device category and referrer detection
+├── app.py                 # FastAPI application and route endpoints
+├── database.py            # SQLite connection, safe migrations, and queries
+├── qr.py                  # QR code PNG generation using qrcode & Pillow
+├── status_pages.py        # Styled HTML status pages for expired, disabled, & 404 links
+├── render.yaml            # Render deployment blueprint
+├── vercel.json            # Vercel deployment configuration
+├── requirements.txt       # Production dependencies (fastapi, uvicorn, qrcode[pil])
+├── requirements-dev.txt   # Development dependencies (pytest, httpx)
+└── README.md              # Project documentation
+```
